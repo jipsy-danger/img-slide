@@ -24,10 +24,13 @@ async function startRuntime() {
   pyodide = await loadPyodide({ indexURL: BASE });
 
   progress(25, "Loading dependencies", "Loading Pillow and XML support…");
-  await pyodide.loadPackage(["lxml", "pillow", "micropip"]);
+  await pyodide.loadPackage(["lxml", "pillow"]);
 
-  progress(42, "Loading PowerPoint engine", "Installing python-pptx…");
+  progress(40, "Loading package manager", "Activating Pyodide's micropip module…");
+  await pyodide.loadPackage("micropip");
   const micropip = pyodide.pyimport("micropip");
+
+  progress(48, "Loading PowerPoint engine", "Installing python-pptx…");
   await micropip.install("python-pptx==1.0.2");
 
   pyodide.FS.mkdirTree("/workspace");
