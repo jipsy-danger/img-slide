@@ -26,7 +26,10 @@ async function ensureRuntime() {
   progress(33, "Loading image engine", "Loading Pillow + XML support…");
   await pyodide.loadPackage(["lxml", "pillow"]);
 
-  progress(49, "Loading PowerPoint engine", "Loading python-pptx…");
+  progress(46, "Loading package manager", "Loading micropip inside Pyodide…");
+  await pyodide.loadPackage("micropip");
+
+  progress(53, "Loading PowerPoint engine", "Installing python-pptx…");
   await pyodide.runPythonAsync(
     ["import micropip", "await micropip.install('python-pptx==1.0.2')"].join("\n")
   );
