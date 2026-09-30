@@ -7,149 +7,77 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>IS — Image to PowerPoint</title>
-  <meta name="description" content="IS converts images into PowerPoint slides." />
+  <meta name="description" content="IS converts images to PowerPoint." />
 </head>
 
 <body>
-  <div class="page-glow"></div>
-
   <div class="app">
     <header class="topbar">
-      <a class="brand" href="./" aria-label="IS home">
-        <span class="brand-mark">IS</span>
-        <span class="brand-name">IS</span>
-      </a>
-
-      <div class="top-status">
-        <span class="status-dot"></span>
-        <span id="topStatus">CONVERTER READY</span>
-      </div>
-
-      <a class="github" href="https://github.com/jipsy-danger/img-slide" target="_blank" rel="noreferrer">
-        SOURCE ↗
-      </a>
+      <div class="brand"><span class="logo">IS</span><span>IS</span></div>
+      <div class="status"><i id="statusDot"></i><span id="topStatus">READY</span></div>
     </header>
 
     <main>
-      <section class="hero">
-        <div class="eyebrow">IMAGE TO POWERPOINT CONVERTER</div>
-        <h1>Turn images into<br /><span>PowerPoint slides.</span></h1>
-        <p>
-          Upload the image assets expected by the project's <strong>build_slide.py</strong>.
-          IS runs that Python file unchanged and gives you the PowerPoint it generates.
-        </p>
+      <section class="intro">
+        <h1>Image → PowerPoint</h1>
+        <p>Upload the required images, run the converter, download the PPTX.</p>
       </section>
 
-      <section class="workspace">
-        <div class="workspace-head">
-          <div>
-            <div class="kicker">01 / IMAGES</div>
-            <h2>Load build assets</h2>
-          </div>
-          <div class="count" id="count">0 / 12 ASSETS</div>
-        </div>
+      <section class="card">
+        <div class="label">IMAGES</div>
 
-        <div class="required-note">Required by build_slide.py: logo.png · p1g.png · p2g.png · cube.png · center.png · arrow.png · grid.png · th1.png · th2.png · ic1.png · ic2.png · ic3.png</div>
+        <div class="required-note">
+          logo.png · p1g.png · p2g.png · cube.png · center.png · arrow.png · grid.png · th1.png · th2.png · ic1.png · ic2.png · ic3.png
+        </div>
 
         <div class="dropzone" id="dropzone">
           <input id="files" type="file" accept="image/png,image/jpeg,image/webp,image/bmp,image/gif,image/tiff" multiple hidden />
-          <div class="upload-symbol">+</div>
-          <h3>DROP IMAGES HERE</h3>
-          <p>or click to select files</p>
-          <button type="button" class="button light" id="choose">SELECT IMAGES</button>
-          <div class="hint">Upload the exact asset filenames used by build_slide.py</div>
+          <div class="upload">+</div>
+          <strong>Drop images here</strong>
+          <span>or click to select</span>
+          <button type="button" id="choose" class="button secondary">SELECT IMAGES</button>
         </div>
 
-        <div class="selected-head">
-          <span>LOADED ASSETS</span>
-          <button type="button" class="text-button" id="clear">CLEAR ALL</button>
+        <div class="file-head">
+          <span id="count">0 / 12</span>
+          <button type="button" id="clear" class="clear">CLEAR</button>
         </div>
+
         <div class="image-list" id="imageList">
-          <div class="empty">Your uploaded images will appear here.</div>
+          <div class="empty">No images selected.</div>
         </div>
       </section>
 
-      <section class="convert section">
-        <div class="kicker">02 / RUN</div>
-        <div class="convert-grid">
-          <div class="convert-info">
-            <h2>Run build_slide.py</h2>
-            <p>IS uses the repository Python file exactly as it is. The uploaded assets are placed beside it, then the generated PowerPoint is returned to the browser.</p>
+      <section class="card convert-card">
+        <div class="label">CONVERT</div>
 
-            <div class="rules">
-              <div><span>01</span><b>12 assets</b><small>required by the Python file</small></div>
-              <div><span>02</span><b>Exact source</b><small>build_slide.py is unchanged</small></div>
-              <div><span>03</span><b>Output</b><small>DarcARK_Innovation_Uniqueness.pptx</small></div>
-            </div>
+        <button type="button" class="button primary" id="convert" disabled>
+          CONVERT TO POWERPOINT
+        </button>
 
-            <button type="button" class="button convert-button" id="convert" disabled>
-              <span class="led"></span>
-              CONVERT TO POWERPOINT
-            </button>
+        <div class="progress">
+          <div class="progress-top">
+            <span id="stage">Waiting</span>
+            <b id="percent">0%</b>
           </div>
-
-          <div class="progress-panel">
-            <div class="panel-title">
-              <span>BUILD PROGRESS</span>
-              <strong id="percent">0%</strong>
-            </div>
-
-            <div class="progress-track">
-              <div class="progress-fill" id="fill"></div>
-            </div>
-
-            <div class="stage" id="stage">Waiting for images</div>
-            <div class="detail" id="detail">The converter will start when you press Convert to PowerPoint.</div>
-
-            <div class="pipeline">
-              <div class="pipe active" data-pipe="input"><b>INPUT</b><span>Images</span></div>
-              <div class="pipe" data-pipe="runtime"><b>PYTHON</b><span>Runtime</span></div>
-              <div class="pipe" data-pipe="convert"><b>BUILD</b><span>Slides</span></div>
-              <div class="pipe" data-pipe="output"><b>OUTPUT</b><span>PPTX</span></div>
-            </div>
-          </div>
+          <div class="track"><div class="fill" id="fill"></div></div>
+          <small id="detail">Select all required images.</small>
         </div>
       </section>
 
-      <section class="output section">
-        <div class="kicker">03 / RESULT</div>
-        <div class="result-card" id="result">
-          <div class="result-mark">PPTX</div>
-          <div class="result-copy">
-            <div class="result-label">POWERPOINT PRESENTATION</div>
-            <h2 id="resultName">No file generated yet</h2>
-            <p id="resultMeta">The PowerPoint generated by build_slide.py will appear here when the build finishes.</p>
+      <section class="result card">
+        <div class="label">OUTPUT</div>
+        <div class="result-row">
+          <div>
+            <strong id="resultName">No PPTX yet</strong>
+            <span id="resultMeta">—</span>
           </div>
-          <a id="download" class="button light disabled" href="#" download>DOWNLOAD PPTX</a>
-        </div>
-      </section>
-
-      <section class="technical section">
-        <div class="kicker">04 / ENGINE</div>
-        <div class="tech-grid">
-          <div class="tech-card">
-            <span>SOURCE</span>
-            <strong>build_slide.py</strong>
-            <p>The repository Python file is executed unchanged.</p>
-          </div>
-          <div class="tech-card">
-            <span>PYTHON RUNTIME</span>
-            <strong>Pyodide</strong>
-            <p>Python runs inside the browser through WebAssembly.</p>
-          </div>
-          <div class="tech-card">
-            <span>POWERPOINT</span>
-            <strong>python-pptx</strong>
-            <p>The final presentation is generated as a standard .pptx file.</p>
-          </div>
+          <a id="download" class="button primary disabled" href="#" download>DOWNLOAD</a>
         </div>
       </section>
     </main>
 
-    <footer>
-      <span>IS // IMAGE TO POWERPOINT</span>
-      <span>ASTRO · PYTHON · WEBASSEMBLY · <span id="clock">--:--:--</span></span>
-    </footer>
+    <footer>IS · Image to PowerPoint</footer>
   </div>
 
   <script>
@@ -443,252 +371,116 @@
 
 <style>
 :global(*){box-sizing:border-box}
-:global(html){scroll-behavior:smooth}
 :global(body){
   margin:0;
-  background:#f6f7f9;
-  color:#18212b;
-  font:14px/1.55 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
   min-height:100vh;
+  background:#070a0f;
+  color:#edf2f7;
+  font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
 }
 :global(button),:global(input){font:inherit}
 :global(a){color:inherit;text-decoration:none}
 
-.app{max-width:1040px;margin:0 auto;padding:20px}
+.app{width:min(900px,calc(100% - 28px));margin:0 auto;padding:16px 0 28px}
 .topbar{
-  height:52px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding:0 14px;
-  border:1px solid #e2e6eb;
-  border-radius:10px;
-  background:#fff;
+  height:50px;padding:0 13px;border:1px solid #1d2733;border-radius:10px;
+  background:#0b1016;display:flex;align-items:center;justify-content:space-between;
 }
-.brand{display:flex;align-items:center;gap:9px;font-weight:800;letter-spacing:.08em}
-.brand-mark{
-  width:30px;height:30px;border-radius:8px;display:grid;place-items:center;
-  background:#1d7ff2;color:#fff;font-size:10px;font-weight:900;
+.brand{display:flex;align-items:center;gap:9px;font-weight:900;letter-spacing:.1em;font-size:12px}
+.logo{
+  width:28px;height:28px;border-radius:7px;background:#2b8cff;
+  display:grid;place-items:center;color:#fff;font-size:10px;
 }
-.brand-name{font-size:12px}
-.top-status{
-  display:flex;align-items:center;gap:7px;
-  color:#687585;font-size:9px;font-weight:800;letter-spacing:.1em
-}
-.status-dot{width:7px;height:7px;border-radius:50%;background:#21a366}
-.github{
-  color:#687585;font-size:9px;font-weight:800;letter-spacing:.1em
-}
-.github:hover{color:#1d7ff2}
+.status{display:flex;align-items:center;gap:7px;color:#7f8b99;font-size:8px;font-weight:900;letter-spacing:.1em}
+.status i{width:6px;height:6px;border-radius:50%;background:#43dd95}
 
-.hero{padding:68px 4px 36px;max-width:760px}
-.eyebrow,.kicker{
-  color:#1d7ff2;font-size:9px;font-weight:900;letter-spacing:.16em
-}
-.hero h1{
-  margin:12px 0 14px;
-  font-size:clamp(40px,6vw,64px);
-  line-height:.98;
-  letter-spacing:-.055em;
-}
-.hero h1 span{color:#1d7ff2}
-.hero p{margin:0;color:#697686;font-size:15px;max-width:700px}
-.hero p strong{color:#26313c}
+.intro{padding:48px 2px 24px}
+.intro h1{margin:0;font-size:42px;letter-spacing:-.055em;line-height:1}
+.intro p{margin:9px 0 0;color:#7f8b99;font-size:13px}
 
-.section{margin-top:34px}
-.workspace,.convert-info,.progress-panel,.result-card,.tech-card{
-  border:1px solid #e2e6eb;
-  background:#fff;
-  box-shadow:0 8px 30px rgba(20,30,40,.05);
+.card{
+  border:1px solid #1d2733;border-radius:11px;background:#0b1016;
+  padding:15px;margin-top:10px;
 }
-.workspace{border-radius:12px;padding:18px}
-.workspace-head{
-  display:flex;align-items:end;justify-content:space-between;
-  gap:14px;margin-bottom:16px
+.label{
+  color:#718092;font-size:8px;font-weight:900;letter-spacing:.14em;margin-bottom:10px
 }
-.workspace h2,.convert-info h2{
-  font-size:21px;letter-spacing:-.03em;margin:5px 0 0
-}
-.count{
-  padding:6px 9px;border:1px solid #d9e2ea;border-radius:999px;
-  color:#526477;background:#f8fafc;font-size:8px;font-weight:900;letter-spacing:.1em
-}
-
 .required-note{
-  margin:0 0 9px;
-  padding:9px 11px;
-  border:1px solid #e8edf2;
-  border-radius:8px;
-  background:#fafbfc;
-  color:#7a8795;
-  font-size:8px;
-  line-height:1.5;
+  padding:8px 10px;margin-bottom:9px;border:1px solid #182330;border-radius:8px;
+  color:#647384;background:#090e14;font-size:8px;line-height:1.5
 }
 .dropzone{
-  min-height:190px;
-  border:1.5px dashed #cdd6df;
-  border-radius:10px;
-  display:flex;flex-direction:column;
-  align-items:center;justify-content:center;
-  text-align:center;cursor:pointer;padding:20px;
-  background:#fafbfc;
-  transition:.15s ease;
+  min-height:160px;border:1px dashed #304153;border-radius:9px;
+  background:#090e14;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  cursor:pointer;text-align:center;transition:.15s;
 }
-.dropzone:hover,.dropzone.drag{
-  border-color:#1d7ff2;
-  background:#f4f8fd;
+.dropzone:hover,.dropzone.drag{border-color:#2b8cff;background:#0b121a}
+.upload{
+  width:38px;height:38px;border:1px solid #2b4055;border-radius:8px;
+  display:grid;place-items:center;color:#5aa6ff;font-size:20px;margin-bottom:8px
 }
-.upload-symbol{
-  width:40px;height:40px;border-radius:9px;
-  border:1px solid #dce4eb;
-  display:grid;place-items:center;
-  color:#1d7ff2;background:#fff;
-  font-size:21px;margin-bottom:9px;
-}
-.dropzone h3{font-size:11px;letter-spacing:.12em;margin:0}
-.dropzone p{color:#7a8795;font-size:10px;margin:4px 0 12px}
-.hint{margin-top:9px;color:#9aa5b1;font-size:8px}
-
+.dropzone strong{font-size:11px}
+.dropzone span{color:#677587;font-size:9px;margin-top:3px}
 .button{
-  display:inline-flex;align-items:center;justify-content:center;gap:7px;
-  border-radius:8px;padding:10px 13px;
-  border:1px solid #d9e1e8;background:#fff;color:#344352;
-  font-size:9px;font-weight:900;letter-spacing:.07em;
-  cursor:pointer;transition:.15s ease;
+  border:1px solid #2b4055;border-radius:8px;padding:9px 12px;
+  background:#101923;color:#dfe7ef;font-size:9px;font-weight:900;letter-spacing:.06em;
+  cursor:pointer;
 }
-.button:hover:not(:disabled){border-color:#aebdca;background:#fafbfc}
-.button.light{
-  background:#1d7ff2;color:#fff;border-color:#1d7ff2
-}
-.button.light:hover:not(:disabled){background:#186fd5;border-color:#186fd5}
-.button:disabled,.button.disabled{opacity:.45;cursor:not-allowed;pointer-events:none}
+.button.secondary{margin-top:11px}
+.button.primary{background:#2b8cff;border-color:#2b8cff;color:#fff}
+.button.primary:hover:not(:disabled){background:#2179dc}
+.button:disabled,.button.disabled{opacity:.35;pointer-events:none;cursor:not-allowed}
 
-.selected-head{
-  display:flex;justify-content:space-between;align-items:center;
-  margin:14px 1px 8px;color:#7b8794;
-  font-size:8px;font-weight:900;letter-spacing:.12em
-}
-.text-button{
-  background:none;border:0;padding:2px;color:#8a96a3;
-  font-size:8px;font-weight:900;letter-spacing:.1em;cursor:pointer
-}
-.text-button:hover{color:#d14d5a}
-.image-list{display:grid;gap:6px}
+.file-head{display:flex;justify-content:space-between;align-items:center;margin:13px 1px 7px;color:#7e8b99;font-size:8px;font-weight:900}
+.clear{border:0;background:transparent;color:#687688;font-size:8px;font-weight:900;cursor:pointer}
+.clear:hover{color:#ff7a86}
+.image-list{display:grid;gap:5px}
 .empty{
-  border:1px solid #e6ebef;border-radius:9px;
-  padding:13px;text-align:center;color:#8a96a3;font-size:9px
+  border:1px solid #182330;border-radius:8px;padding:12px;text-align:center;
+  color:#5f6c7c;font-size:9px
 }
 .image-row{
-  display:grid;grid-template-columns:28px 58px 1fr auto;
-  gap:10px;align-items:center;padding:7px;
-  border:1px solid #e4e9ee;border-radius:9px;background:#fbfcfd
+  display:grid;grid-template-columns:27px 55px 1fr 25px;gap:9px;align-items:center;
+  padding:6px;border:1px solid #182330;border-radius:8px;background:#090e14
 }
 .image-index{
-  width:24px;height:24px;display:grid;place-items:center;
-  border-radius:6px;background:#eef5fc;color:#1d7ff2;
-  font-size:8px;font-weight:900
+  width:23px;height:23px;border-radius:5px;background:#0d1a27;
+  display:grid;place-items:center;color:#58a9ff;font-size:7px;font-weight:900
 }
-.image-row img{
-  width:58px;height:40px;object-fit:cover;border-radius:6px;background:#eef1f4
-}
-.image-info{display:flex;flex-direction:column;min-width:0}
-.image-info b{font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.image-info small{color:#8a96a3;font-size:8px;margin-top:1px}
+.image-row img{width:55px;height:37px;object-fit:cover;border-radius:5px;background:#070b10}
+.image-info{min-width:0;display:flex;flex-direction:column}
+.image-info b{font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.image-info small{font-size:7px;color:#647384;margin-top:1px}
 .remove{
-  width:26px;height:26px;border:1px solid #dde4ea;
-  background:#fff;color:#8793a0;border-radius:7px;
-  cursor:pointer;font-size:15px;line-height:1
+  width:24px;height:24px;border:1px solid #273544;border-radius:6px;
+  background:#0b1219;color:#788596;cursor:pointer
 }
-.remove:hover{color:#d14d5a;border-color:#efc5ca}
+.remove:hover{color:#ff7a86;border-color:#65343b}
 
-.convert-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
-.convert-info,.progress-panel{border-radius:12px;padding:17px}
-.convert-info p{color:#738190;max-width:540px;margin:7px 0 15px}
-.rules{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:15px 0}
-.rules>div{
-  border:1px solid #e7ebef;border-radius:8px;padding:9px;background:#fafbfc
-}
-.rules span{display:block;color:#1d7ff2;font-size:8px;font-weight:900}
-.rules b{display:block;margin-top:4px;font-size:9px}
-.rules small{display:block;color:#8a96a3;font-size:7px;margin-top:2px}
-.convert-button{margin-top:2px;background:#1d7ff2;color:#fff;border-color:#1d7ff2}
-.convert-button:hover:not(:disabled){background:#186fd5;border-color:#186fd5}
-.led{width:6px;height:6px;border-radius:50%;background:#79aef0}
-.convert-button:not(:disabled) .led{background:#bde7ce}
-.convert-button.working .led{animation:pulse .8s infinite}
+.convert-card{display:grid;grid-template-columns:auto 1fr;gap:15px;align-items:end}
+.convert-card .label{grid-column:1/-1;margin-bottom:0}
+.progress{min-width:0}
+.progress-top{display:flex;justify-content:space-between;gap:10px;color:#8b97a5;font-size:9px}
+.progress-top b{color:#e8eef4}
+.track{height:7px;border-radius:99px;background:#111922;margin-top:7px;overflow:hidden}
+.fill{height:100%;width:0;background:#2b8cff;border-radius:99px;transition:width .2s}
+.progress small{display:block;color:#647384;font-size:8px;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-.panel-title{
-  display:flex;justify-content:space-between;align-items:center;
-  color:#7b8794;font-size:8px;font-weight:900;letter-spacing:.12em
-}
-.panel-title strong{color:#26313c;font-size:14px;letter-spacing:0}
-.progress-track{
-  height:8px;border-radius:999px;background:#eef1f4;
-  overflow:hidden;margin-top:12px
-}
-.progress-fill{
-  height:100%;width:0%;border-radius:999px;
-  background:#1d7ff2;transition:width .22s ease
-}
-.stage{font-size:14px;font-weight:800;margin-top:14px}
-.detail{font-size:9px;color:#7b8794;margin-top:3px;min-height:34px}
-.pipeline{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:14px}
-.pipe{
-  border:1px solid #e5eaee;border-radius:8px;
-  background:#fafbfc;padding:8px
-}
-.pipe b{display:block;font-size:7px;letter-spacing:.07em;color:#7b8794}
-.pipe span{display:block;color:#9aa5b1;font-size:7px;margin-top:2px}
-.pipe.active{border-color:#a9c8eb;background:#f3f8fe}
-.pipe.active b{color:#1d7ff2}
-.pipe.done{border-color:#bfe0cd}
-.pipe.done b{color:#24915a}
+.result .label{margin-bottom:8px}
+.result-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.result-row>div{min-width:0}
+.result-row strong{display:block;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.result-row span{display:block;color:#647384;font-size:8px;margin-top:2px}
 
-.result-card{
-  margin-top:10px;border-radius:12px;padding:16px;
-  display:grid;grid-template-columns:48px 1fr auto;
-  gap:12px;align-items:center
-}
-.result-mark{
-  width:48px;height:48px;border-radius:10px;
-  display:grid;place-items:center;
-  background:#eaf3fd;color:#1d7ff2;
-  font-size:8px;font-weight:900
-}
-.result-label{color:#7c8794;font-size:8px;font-weight:900;letter-spacing:.1em}
-.result-card h2{font-size:15px;margin:4px 0 1px;letter-spacing:-.02em}
-.result-card p{margin:0;color:#7a8795;font-size:9px}
+footer{padding:15px 2px 0;color:#566272;font-size:8px}
 
-.tech-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
-.tech-card{border-radius:11px;padding:14px}
-.tech-card span{color:#8a96a3;font-size:7px;font-weight:900;letter-spacing:.11em}
-.tech-card strong{display:block;margin-top:5px;font-size:12px}
-.tech-card p{color:#7a8795;font-size:8px;margin:3px 0 0}
-
-footer{
-  display:flex;justify-content:space-between;gap:12px;
-  padding:16px 2px 6px;margin-top:46px;
-  border-top:1px solid #e2e6eb;color:#929da9;
-  font-size:8px;letter-spacing:.09em
-}
-
-@keyframes pulse{
-  0%,100%{box-shadow:0 0 0 0 rgba(29,127,242,0)}
-  50%{box-shadow:0 0 0 5px rgba(29,127,242,.09)}
-}
-
-@media(max-width:820px){
-  .convert-grid{grid-template-columns:1fr}
-}
 @media(max-width:620px){
-  .app{padding:12px}
-  .topbar{padding:0 11px}
-  .top-status{display:none}
-  .hero{padding:48px 3px 30px}
-  .workspace{padding:13px}
-  .workspace-head{align-items:flex-start;flex-direction:column}
-  .rules,.tech-grid{grid-template-columns:1fr}
-  .result-card{grid-template-columns:1fr}
-  footer{flex-direction:column}
+  .app{width:min(100% - 18px,900px)}
+  .intro{padding:38px 1px 19px}
+  .intro h1{font-size:34px}
+  .convert-card{grid-template-columns:1fr}
+  .convert-card .button{width:100%}
+  .result-row{align-items:stretch;flex-direction:column}
+  .result-row .button{width:100%}
 }
 </style>
