@@ -34,8 +34,9 @@ async function ensureRuntime() {
   await pyodide.loadPackage(["lxml", "pillow"]);
 
   setProgress(49, "Loading python-pptx", "Installing the PowerPoint writer in the browser…");
-  const micropip = pyodide.pyimport("micropip");
-  await micropip.install("python-pptx==1.0.2");
+  await pyodide.runPythonAsync(
+    "import micropip\nawait micropip.install('python-pptx==1.0.2')"
+  );
 
   pyodide.FS.mkdirTree("/workspace");
   pyodide.FS.mkdirTree("/mnt/user-data/outputs");
