@@ -28,7 +28,7 @@ async function ensureRuntime() {
 
   progress(49, "Loading PowerPoint engine", "Loading python-pptx…");
   await pyodide.runPythonAsync(
-    "import micropip\\nawait micropip.install('python-pptx==1.0.2')"
+    ["import micropip", "await micropip.install('python-pptx==1.0.2')"].join("\n")
   );
 
   pyodide.FS.mkdirTree("/workspace/input");
