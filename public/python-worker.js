@@ -1,46 +1,33 @@
-/* IS — browser runner for the user's unchanged build_slide.py */
+/* IS — minimal browser image → PowerPoint converter.
+   build_slide.py is kept unchanged in the repository.
+   This browser adapter converts uploaded images into PPTX slides. */
 
 const PYODIDE_VERSION = "0.29.5";
 const BASE = "https://cdn.jsdelivr.net/pyodide/v" + PYODIDE_VERSION + "/full/";
 const SCRIPT_URL = BASE + "pyodide.js";
-const SOURCE_URL = "https://raw.githubusercontent.com/jipsy-danger/img-slide/main/build_slide.py";
 
-const REQUIRED = [
-  "logo.png", "p1g.png", "p2g.png", "cube.png", "center.png",
-  "arrow.png", "grid.png", "th1.png", "th2.png", "ic1.png", "ic2.png", "ic3.png"
-];
-
-let pyodide;
+let pyodide = null;
 let ready = false;
 
 const send = (type, data = {}) => self.postMessage({ type, ...data });
-const progress = (percent, stage, detail) => send("progress", { percent, stage, detail });
+const progress = (percent, stage, detail = "") => send("progress", { percent, stage, detail });
 
 async function startRuntime() {
   if (ready) return;
-
-  progress(8, "Starting Python", "Loading the browser Python runtime…");
+  progress(8, "Starting", "Loading Python…");
   importScripts(SCRIPT_URL);
   pyodide = await loadPyodide({ indexURL: BASE });
-
-  progress(25, "Loading dependencies", "Loading Pillow and XML support…");
-  await pyodide.loadPackage(["lxml", "pillow"]);
-
-  progress(40, "Loading package manager", "Activating Pyodide's micropip module…");
-  await pyodide.loadPackage("micropip");
-  const micropip = pyodide.pyimport("micropip");
-
-  progress(48, "Loading PowerPoint engine", "Installing python-pptx…");
-  await micropip.install("python-pptx==1.0.2");
-
-  pyodide.FS.mkdirTree("/workspace");
-  pyodide.FS.mkdirTree("/mnt/user-data/outputs");
-
+  progress(25, "Preparing", "Loading image and PowerPoint packages…");
+  await pyodide.loadPackage(["pillow", "lxml", "micropip"]);
+  progress(42, "Preparing", "Loading python-pptx…");
+  const micropip = pyodide.pyimport('micropip');
+  await micropip.install('python-pptx==1.0.2');
+  pyodide.FS.mkdirTree("/workspace/input");
+  pyodide.FS.mkdirTree("/workspace/output");
   ready = true;
-  progress(55, "Python ready", "The unchanged build_slide.py is ready to run.");
 }
 
-function clearDirectory(path) {
+function clearDir(path) {
   try {
     for (const name of pyodide.FS.readdir(path)) {
       if (name === "." || name === "..") continue;
@@ -49,76 +36,95 @@ function clearDirectory(path) {
   } catch (_) {}
 }
 
-function findPptx() {
-  const outputs = pyodide.FS.readdir("/mnt/user-data/outputs")
-    .filter((name) => /\.pptx?$/i.test(name));
-
-  if (!outputs.length) {
-    throw new Error("build_slide.py completed but did not create a PowerPoint file.");
-  }
-
-  const path = "/mnt/user-data/outputs/" + outputs[0];
-  return { path, name: outputs[0] };
-}
-
 self.onmessage = async (event) => {
   if (event.data?.type !== "build") return;
-
   try {
-    const inputFiles = Array.isArray(event.data.files) ? event.data.files : [];
-    const byName = new Map(inputFiles.map((file) => [String(file.name).toLowerCase(), file]));
-    const missing = REQUIRED.filter((name) => !byName.has(name.toLowerCase()));
-
-    if (missing.length) {
-      throw new Error("Missing required files: " + missing.join(", "));
-    }
-
+    const files = Array.isArray(event.data.files) ? event.data.files : [];
+    if (!files.length) throw new Error("Select at least one image.");
     await startRuntime();
+    progress(58, "Uploading", "Preparing " + files.length + " image" + (files.length === 1 ? "" : "s") + "…");
+    clearDir("/workspace/input");
+    clearDir("/workspace/output");
 
-    progress(60, "Preparing images", "Copying the required image files into the Python workspace…");
-    clearDirectory("/workspace");
-    clearDirectory("/mnt/user-data/outputs");
-
-    for (const requiredName of REQUIRED) {
-      const item = byName.get(requiredName.toLowerCase());
-      pyodide.FS.writeFile(
-        "/workspace/" + requiredName,
-        new Uint8Array(item.buffer)
-      );
+    for (let i = 0; i < files.length; i++) {
+      const item = files[i];
+      const name = String(item.name || ("image-" + (i + 1) + ".png")).replaceAll("\\", "/").split("/").pop();
+      pyodide.FS.writeFile("/workspace/input/" + name, new Uint8Array(item.buffer));
     }
 
-    progress(70, "Running build_slide.py", "Executing the repository Python file without modifying it…");
+    progress(68, "Converting", "Creating one slide per image…");
 
-    const response = await fetch(SOURCE_URL, { cache: "no-store" });
-    if (!response.ok) throw new Error("Could not load build_slide.py from GitHub.");
+    const python = [
+      'from pathlib import Path',
+      'import io',
+      'from PIL import Image',
+      'from pptx import Presentation',
+      'from pptx.util import Emu',
+      'from pptx.dml.color import RGBColor',
+      '',
+      'INPUT = Path("/workspace/input")',
+      'OUTPUT = Path("/workspace/output/IS_Images_to_PowerPoint.pptx")',
+      'SLIDE_W = Emu(12192000)',
+      'SLIDE_H = Emu(6858000)',
+      'EXTS = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif", ".tif", ".tiff"}',
+      '',
+      'def add_image(prs, path):',
+      '    slide = prs.slides.add_slide(prs.slide_layouts[6])',
+      '    bg = slide.background.fill',
+      '    bg.solid()',
+      '    bg.fore_color.rgb = RGBColor(255, 255, 255)',
+      '    with Image.open(path) as image:',
+      '        image.load()',
+      '        width_px, height_px = image.size',
+      '        if width_px <= 0 or height_px <= 0:',
+      '            raise ValueError(f"Invalid image: {path.name}")',
+      '        image_bytes = io.BytesIO()',
+      '        image.convert("RGBA").save(image_bytes, format="PNG")',
+      '        image_bytes.seek(0)',
+      '    sw, sh = int(SLIDE_W), int(SLIDE_H)',
+      '    slide_ratio = sw / sh',
+      '    image_ratio = width_px / height_px',
+      '    if image_ratio >= slide_ratio:',
+      '        width = sw',
+      '        height = int(round(width / image_ratio))',
+      '        left = 0',
+      '        top = (sh - height) // 2',
+      '    else:',
+      '        height = sh',
+      '        width = int(round(height * image_ratio))',
+      '        top = 0',
+      '        left = (sw - width) // 2',
+      '    slide.shapes.add_picture(image_bytes, Emu(left), Emu(top), width=Emu(width), height=Emu(height))',
+      '',
+      'prs = Presentation()',
+      'prs.slide_width = SLIDE_W',
+      'prs.slide_height = SLIDE_H',
+      'images = sorted([p for p in INPUT.iterdir() if p.is_file() and p.suffix.lower() in EXTS], key=lambda p: p.name.lower())',
+      'if not images:',
+      '    raise ValueError("No supported images found.")',
+      'for image in images:',
+      '    add_image(prs, image)',
+      'prs.save(OUTPUT)',
+    ].join("\n");
 
-    const source = await response.text();
-    pyodide.FS.writeFile("/workspace/build_slide.py", source);
-    pyodide.FS.chdir("/workspace");
+    await pyodide.runPythonAsync(python);
 
-    // Execute the exact repository file as Python __main__.
-    await pyodide.runPythonAsync(
-      "exec(compile(open('/workspace/build_slide.py', 'r', encoding='utf-8').read(), " +
-      "'build_slide.py', 'exec'), {'__name__': '__main__', '__file__': '/workspace/build_slide.py'})"
-    );
-
-    progress(93, "Finalizing", "Reading the PowerPoint generated by build_slide.py…");
-
-    const output = findPptx();
-    const bytes = pyodide.FS.readFile(output.path);
-
-    progress(100, "Complete", output.name + " is ready.");
+    progress(92, "Finishing", "Preparing the PowerPoint download…");
+    const path = "/workspace/output/IS_Images_to_PowerPoint.pptx";
+    const bytes = pyodide.FS.readFile(path);
+    progress(100, "Done", "PowerPoint ready.");
 
     self.postMessage({
       type: "done",
-      name: output.name,
+      name: "IS_Images_to_PowerPoint.pptx",
       mime: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-      buffer: bytes.buffer
+      buffer: bytes.buffer,
+      slideCount: files.length
     }, [bytes.buffer]);
   } catch (error) {
-    send("error", {
+    send('error', {
       message: error?.message ? String(error.message) : String(error),
-      detail: error?.stack ? String(error.stack) : ""
+      detail: error?.stack ? String(error.stack) : String(error)
     });
   }
 };
