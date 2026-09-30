@@ -1,6 +1,4 @@
 ---
-const repo = "jipsy-danger/img-slide";
-const sourceUrl = "https://github.com/jipsy-danger/img-slide/blob/main/build_slide.py";
 ---
 
 <!doctype html>
@@ -8,99 +6,691 @@ const sourceUrl = "https://github.com/jipsy-danger/img-slide/blob/main/build_sli
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>IMG-SLIDE // Build HUD</title>
-  <meta name="description" content="IMG-SLIDE — presentation build and deployment HUD" />
+  <title>IMG-SLIDE // Python PowerPoint Builder</title>
+  <meta name="description" content="Run build_slide.py in the browser and download the generated PowerPoint." />
 </head>
+
 <body>
+  <div class="noise"></div>
+
   <div class="wrap">
     <header class="top">
-      <a class="brand" href="/"><span class="mark">IS</span><span>IMG-SLIDE</span></a>
+      <a class="brand" href="./">
+        <span class="mark">IS</span>
+        <span>IMG-SLIDE</span>
+      </a>
       <nav class="nav">
-        <a href="#status">STATUS</a><a href="#build">BUILD</a><a href="#source">SOURCE</a>
-        <a href={`https://github.com/${repo}`} target="_blank" rel="noreferrer">GITHUB ↗</a>
+        <a href="#builder">BUILDER</a>
+        <a href="#process">PROCESS</a>
+        <a href="#source">SOURCE</a>
+        <a href="https://github.com/jipsy-danger/img-slide" target="_blank" rel="noreferrer">GITHUB ↗</a>
       </nav>
     </header>
 
     <main>
       <section class="hero">
         <div>
-          <div class="eyebrow">JIPSY-DANGER / ASTRO PRESENTATION ENGINE</div>
-          <h1>BUILD<br />HUD.</h1>
-          <p>A clean, authentic control surface for the <strong>IMG-SLIDE</strong> presentation generator — now served through Astro and deployed with GitHub Pages.</p>
-          <div class="actions">
-            <a class="btn primary" href={sourceUrl} target="_blank" rel="noreferrer">OPEN build_slide.py ↗</a>
-            <a class="btn" href={`https://github.com/${repo}`} target="_blank" rel="noreferrer">VIEW REPOSITORY ↗</a>
+          <div class="eyebrow">JIPSY-DANGER / PYTHON-IN-THE-BROWSER</div>
+          <h1>IMAGE →<br /><span>POWERPOINT.</span></h1>
+          <p>
+            Drop the image assets used by <strong>build_slide.py</strong>, run the exact
+            repository Python source directly in your browser, watch the build progress,
+            and download the finished <strong>.pptx</strong>.
+          </p>
+          <div class="hero-meta">
+            <span class="live-dot"></span>
+            <span>PYTHON ENGINE</span>
+            <span class="sep">/</span>
+            <span>PYODIDE + WEBASSEMBLY</span>
+            <span class="sep">/</span>
+            <span>BROWSER-SIDE</span>
           </div>
         </div>
 
-        <aside class="hud" id="status">
-          <div class="hudhead"><span>SYSTEM HUD</span><span>LIVE</span></div>
-          <div class="status"><i class="dot"></i> ASTRO SITE ONLINE</div>
+        <aside class="hud">
+          <div class="hudhead">
+            <span>ENGINE STATUS</span>
+            <span class="online">READY</span>
+          </div>
+          <div class="status">
+            <i class="dot"></i>
+            <span id="engineStatus">WAITING FOR INPUT</span>
+          </div>
           <div class="metric"><span>Repository</span><b>img-slide</b></div>
-          <div class="metric"><span>Branch</span><b>main</b></div>
-          <div class="metric"><span>Framework</span><b class="ok">Astro</b></div>
-          <div class="metric"><span>Deployment</span><b class="ok">GitHub Pages</b></div>
-          <div class="metric"><span>Viewport</span><b id="viewport">—</b></div>
+          <div class="metric"><span>Python source</span><b>build_slide.py</b></div>
+          <div class="metric"><span>Framework</span><b>Astro</b></div>
+          <div class="metric"><span>Runtime</span><b>Pyodide 0.29.5</b></div>
+          <div class="metric"><span>Output</span><b>.pptx</b></div>
         </aside>
       </section>
 
-      <section class="grid">
-        <div class="card"><div class="label">Framework</div><div class="value">Astro</div><div class="sub">Static site generation</div></div>
-        <div class="card"><div class="label">Engine</div><div class="value">PPTX Builder</div><div class="sub">python-pptx + XML styling</div></div>
-        <div class="card"><div class="label">Output</div><div class="value">.pptx</div><div class="sub">DarcARK_Innovation_Uniqueness</div></div>
+      <section class="builder section" id="builder">
+        <div class="section-top">
+          <div>
+            <div class="section-kicker">01 / INPUT</div>
+            <h2>Upload image assets</h2>
+            <p>
+              Use one drop zone for the full image set. The current Python file references
+              the filenames listed below, so the page checks them before starting the build.
+            </p>
+          </div>
+          <div class="counter" id="assetCounter">0 / 12 READY</div>
+        </div>
+
+        <div class="drop-zone" id="dropZone">
+          <input id="fileInput" type="file" accept="image/png,image/jpeg,image/webp" multiple hidden />
+          <div class="drop-icon">↑</div>
+          <div class="drop-title">DROP IMAGES HERE</div>
+          <div class="drop-sub">or click to browse • PNG / JPG / WEBP</div>
+          <button class="btn secondary" id="browseBtn" type="button">SELECT IMAGES</button>
+        </div>
+
+        <div class="asset-grid" id="assetGrid"></div>
+
+        <div class="manifest">
+          <div class="manifest-head">
+            <span>REQUIRED ASSET MANIFEST</span>
+            <span>EXACT FILENAMES USED BY build_slide.py</span>
+          </div>
+          <div class="manifest-list" id="manifestList"></div>
+        </div>
+
+        <div class="builder-actions">
+          <button class="btn primary large" id="buildBtn" type="button" disabled>
+            <span class="btn-led"></span>
+            RUN build_slide.py
+          </button>
+          <button class="btn ghost" id="clearBtn" type="button">CLEAR</button>
+        </div>
       </section>
 
-      <section class="section" id="build">
-        <h2>Build sequence</h2>
-        <p>Astro builds the HUD into a static <code>dist/</code> artifact for GitHub Pages.</p>
-        <div class="timeline">
-          <div class="step"><span class="num">01</span><div><b>Astro source</b><br /><small>src/pages/index.astro</small></div><span class="pill">READY</span></div>
-          <div class="step"><span class="num">02</span><div><b>Static build</b><br /><small>astro build → dist/</small></div><span class="pill">BUILD</span></div>
-          <div class="step"><span class="num">03</span><div><b>GitHub Pages</b><br /><small>Actions deploys the generated dist artifact</small></div><span class="pill">ONLINE</span></div>
+      <section class="section" id="process">
+        <div class="section-kicker">02 / EXECUTION</div>
+        <div class="process-layout">
+          <div class="progress-card">
+            <div class="progress-head">
+              <span>BUILD PIPELINE</span>
+              <span id="percentLabel">0%</span>
+            </div>
+
+            <div class="progress-track">
+              <div class="progress-fill" id="progressFill"></div>
+            </div>
+
+            <div class="stage-title" id="stageTitle">Waiting for images…</div>
+            <div class="stage-detail" id="stageDetail">The Python runtime will start when you launch the build.</div>
+
+            <div class="steps">
+              <div class="pstep" data-step="input"><span>01</span><b>INPUT</b><em>Upload assets</em></div>
+              <div class="pstep" data-step="runtime"><span>02</span><b>RUNTIME</b><em>Load Python + packages</em></div>
+              <div class="pstep" data-step="execute"><span>03</span><b>EXECUTE</b><em>Run build_slide.py</em></div>
+              <div class="pstep" data-step="output"><span>04</span><b>OUTPUT</b><em>Package .pptx</em></div>
+            </div>
+          </div>
+
+          <div class="console-card">
+            <div class="console-head">
+              <span>PROCESS CONSOLE</span>
+              <span id="consoleState">IDLE</span>
+            </div>
+            <pre id="console">[IMG-SLIDE] Builder initialized.
+[IMG-SLIDE] Waiting for asset upload.</pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="section output-section">
+        <div class="section-kicker">03 / OUTPUT</div>
+        <div class="output-card" id="outputCard">
+          <div class="output-icon">PPT</div>
+          <div>
+            <div class="output-label">GENERATED PRESENTATION</div>
+            <h2 id="outputName">No presentation generated yet</h2>
+            <p id="outputMeta">Run the Python builder to create a downloadable PowerPoint.</p>
+          </div>
+          <a class="btn primary disabled" id="downloadBtn" href="#" download>DOWNLOAD .PPTX</a>
         </div>
       </section>
 
       <section class="section" id="source">
-        <h2>Source monitor</h2>
-        <p>Presentation source tracked independently from the Astro HUD.</p>
-        <div class="code">
-          <div class="codebar"><span>build_slide.py</span><span>PYTHON SOURCE</span></div>
-          <pre>from pptx import Presentation
+        <div class="section-kicker">04 / SOURCE</div>
+        <div class="source-grid">
+          <div class="code-card">
+            <div class="codebar"><span>build_slide.py</span><span>REPOSITORY SOURCE</span></div>
+            <pre>from pptx import Presentation
 from pptx.util import Emu, Pt
 from pptx.dml.color import RGBColor
+from lxml import etree
 
 # ...
 # Innovation & Uniqueness
 # 3D LiDAR → Adaptive 2.5D Conversion Engine
 # ...
+
 prs.save('/mnt/user-data/outputs/DarcARK_Innovation_Uniqueness.pptx')</pre>
+          </div>
+
+          <div class="info-card">
+            <div class="info-row">
+              <span>EXECUTION</span>
+              <b>Browser-side Python</b>
+            </div>
+            <div class="info-row">
+              <span>PYTHON VERSION</span>
+              <b>CPython / WebAssembly</b>
+            </div>
+            <div class="info-row">
+              <span>POWERPOINT</span>
+              <b>python-pptx 1.0.2</b>
+            </div>
+            <div class="info-row">
+              <span>ASSET TRANSPORT</span>
+              <b>Local browser memory</b>
+            </div>
+            <div class="info-row">
+              <span>SERVER UPLOAD</span>
+              <b>Not required</b>
+            </div>
+          </div>
         </div>
       </section>
     </main>
 
-    <footer><span>IMG-SLIDE // JIPSY-DANGER</span><span>ASTRO + GITHUB PAGES • <span id="clock">--:--:--</span></span></footer>
+    <footer>
+      <span>IMG-SLIDE // JIPSY-DANGER</span>
+      <span>ASTRO + PYODIDE + GITHUB PAGES • <span id="clock">--:--:--</span></span>
+    </footer>
   </div>
 
   <script>
-    const v = document.getElementById('viewport');
-    const c = document.getElementById('clock');
+    const REQUIRED = [
+      "logo.png", "p1g.png", "p2g.png", "cube.png", "center.png",
+      "arrow.png", "grid.png", "th1.png", "th2.png", "ic1.png", "ic2.png", "ic3.png"
+    ];
+
+    const files = new Map();
+    const fileInput = document.getElementById("fileInput");
+    const browseBtn = document.getElementById("browseBtn");
+    const dropZone = document.getElementById("dropZone");
+    const assetGrid = document.getElementById("assetGrid");
+    const manifestList = document.getElementById("manifestList");
+    const assetCounter = document.getElementById("assetCounter");
+    const buildBtn = document.getElementById("buildBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const engineStatus = document.getElementById("engineStatus");
+    const progressFill = document.getElementById("progressFill");
+    const percentLabel = document.getElementById("percentLabel");
+    const stageTitle = document.getElementById("stageTitle");
+    const stageDetail = document.getElementById("stageDetail");
+    const consoleEl = document.getElementById("console");
+    const consoleState = document.getElementById("consoleState");
+    const downloadBtn = document.getElementById("downloadBtn");
+    const outputName = document.getElementById("outputName");
+    const outputMeta = document.getElementById("outputMeta");
+
+    let worker = null;
+    let objectUrl = null;
+    let building = false;
+
+    function logLine(message) {
+      const stamp = new Date().toLocaleTimeString([], { hour12: false });
+      consoleEl.textContent += "\\n[" + stamp + "] " + message;
+      consoleEl.scrollTop = consoleEl.scrollHeight;
+    }
+
+    function normalize(name) {
+      return String(name || "").toLowerCase();
+    }
+
+    function renderManifest() {
+      manifestList.innerHTML = REQUIRED.map((name) => {
+        const ok = files.has(normalize(name));
+        return '<div class="manifest-item ' + (ok ? "ok" : "") + '">' +
+          '<span class="manifest-dot"></span><span>' + name + '</span>' +
+          '<b>' + (ok ? "READY" : "MISSING") + '</b></div>';
+      }).join("");
+    }
+
+    function renderAssets() {
+      assetGrid.innerHTML = "";
+
+      if (!files.size) {
+        assetGrid.innerHTML = '<div class="empty-assets">No image assets selected yet.</div>';
+      } else {
+        for (const [key, file] of files.entries()) {
+          const card = document.createElement("div");
+          card.className = "asset";
+          const preview = document.createElement("img");
+          preview.alt = file.name;
+          preview.src = URL.createObjectURL(file);
+          const meta = document.createElement("div");
+          meta.className = "asset-meta";
+          meta.innerHTML =
+            '<b>' + file.name + '</b>' +
+            '<span>' + Math.max(1, Math.round(file.size / 1024)) + ' KB</span>';
+          const remove = document.createElement("button");
+          remove.className = "asset-remove";
+          remove.type = "button";
+          remove.textContent = "×";
+          remove.title = "Remove " + file.name;
+          remove.addEventListener("click", () => {
+            files.delete(key);
+            renderAll();
+          });
+          card.appendChild(preview);
+          card.appendChild(meta);
+          card.appendChild(remove);
+          assetGrid.appendChild(card);
+        }
+      }
+
+      updateValidation();
+    }
+
+    function updateValidation() {
+      const ready = REQUIRED.filter((name) => files.has(normalize(name))).length;
+      assetCounter.textContent = ready + " / " + REQUIRED.length + " READY";
+      buildBtn.disabled = building || ready !== REQUIRED.length;
+      buildBtn.classList.toggle("ready", ready === REQUIRED.length && !building);
+
+      if (!building) {
+        engineStatus.textContent = ready === REQUIRED.length ? "READY TO BUILD" : "WAITING FOR INPUT";
+      }
+    }
+
+    function renderAll() {
+      renderManifest();
+      renderAssets();
+    }
+
+    function addFiles(list) {
+      for (const file of Array.from(list || [])) {
+        if (!file.type.startsWith("image/")) continue;
+        files.set(normalize(file.name), file);
+      }
+      renderAll();
+    }
+
+    browseBtn.addEventListener("click", () => fileInput.click());
+    dropZone.addEventListener("click", (event) => {
+      if (event.target.closest("button")) return;
+      fileInput.click();
+    });
+
+    fileInput.addEventListener("change", () => {
+      addFiles(fileInput.files);
+      fileInput.value = "";
+    });
+
+    ["dragenter", "dragover"].forEach((eventName) => {
+      dropZone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        dropZone.classList.add("drag");
+      });
+    });
+
+    ["dragleave", "drop"].forEach((eventName) => {
+      dropZone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        dropZone.classList.remove("drag");
+      });
+    });
+
+    dropZone.addEventListener("drop", (event) => {
+      addFiles(event.dataTransfer.files);
+    });
+
+    clearBtn.addEventListener("click", () => {
+      if (building) return;
+      files.clear();
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+        objectUrl = null;
+      }
+      downloadBtn.classList.add("disabled");
+      downloadBtn.href = "#";
+      outputName.textContent = "No presentation generated yet";
+      outputMeta.textContent = "Run the Python builder to create a downloadable PowerPoint.";
+      progressFill.style.width = "0%";
+      percentLabel.textContent = "0%";
+      stageTitle.textContent = "Waiting for images…";
+      stageDetail.textContent = "The Python runtime will start when you launch the build.";
+      consoleState.textContent = "IDLE";
+      consoleEl.textContent = "[IMG-SLIDE] Builder initialized.\\n[IMG-SLIDE] Waiting for asset upload.";
+      renderAll();
+    });
+
+    function setProgress(percent, stage, detail) {
+      progressFill.style.width = percent + "%";
+      percentLabel.textContent = percent + "%";
+      stageTitle.textContent = stage;
+      stageDetail.textContent = detail || "";
+    }
+
+    function setStepState(activeStage, percent) {
+      const steps = [...document.querySelectorAll(".pstep")];
+      const groups = [
+        { key: "input", min: 0, max: 9 },
+        { key: "runtime", min: 10, max: 65 },
+        { key: "execute", min: 66, max: 90 },
+        { key: "output", min: 91, max: 100 }
+      ];
+      steps.forEach((step) => {
+        const key = step.dataset.step;
+        const group = groups.find((g) => g.key === key);
+        step.classList.toggle("active", activeStage === key);
+        step.classList.toggle("done", group && percent >= group.max);
+      });
+    }
+
+    function stageKeyFromProgress(percent) {
+      if (percent < 10) return "input";
+      if (percent < 66) return "runtime";
+      if (percent < 91) return "execute";
+      return "output";
+    }
+
+    async function startBuild() {
+      if (building) return;
+
+      const missing = REQUIRED.filter((name) => !files.has(normalize(name)));
+      if (missing.length) {
+        logLine("ERROR: Missing assets: " + missing.join(", "));
+        return;
+      }
+
+      building = true;
+      updateValidation();
+      buildBtn.classList.add("working");
+      buildBtn.querySelector(".btn-led").style.animation = "pulse .8s infinite";
+      consoleState.textContent = "RUNNING";
+      engineStatus.textContent = "BUILDING…";
+      logLine("Starting browser-side Python execution.");
+      logLine("Loading the exact build_slide.py from main.");
+
+      worker?.terminate();
+      worker = new Worker("/img-slide/python-worker.js");
+
+      worker.onmessage = (event) => {
+        const data = event.data || {};
+
+        if (data.type === "progress") {
+          const percent = Number(data.percent || 0);
+          setProgress(percent, data.stage, data.detail);
+          setStepState(stageKeyFromProgress(percent), percent);
+          if (data.stage) logLine(data.stage + (data.detail ? " — " + data.detail : ""));
+          return;
+        }
+
+        if (data.type === "done") {
+          building = false;
+          updateValidation();
+          buildBtn.classList.remove("working");
+          consoleState.textContent = "COMPLETE";
+          engineStatus.textContent = "PRESENTATION READY";
+          setProgress(100, "Complete", "The PowerPoint is ready to download.");
+          setStepState("output", 100);
+
+          if (objectUrl) URL.revokeObjectURL(objectUrl);
+          const blob = new Blob([data.buffer], { type: data.mime || "application/vnd.openxmlformats-officedocument.presentationml.presentation" });
+          objectUrl = URL.createObjectURL(blob);
+
+          downloadBtn.href = objectUrl;
+          downloadBtn.download = data.name || "IMG-SLIDE.pptx";
+          downloadBtn.classList.remove("disabled");
+
+          outputName.textContent = data.name || "Generated presentation";
+          outputMeta.textContent = "Generated in the browser • " + (blob.size / 1024 / 1024).toFixed(2) + " MB";
+          logLine("SUCCESS: " + (data.name || "PowerPoint") + " created.");
+          logLine("SUCCESS: Download is ready.");
+          worker.terminate();
+          worker = null;
+          return;
+        }
+
+        if (data.type === "error") {
+          building = false;
+          buildBtn.classList.remove("working");
+          updateValidation();
+          consoleState.textContent = "ERROR";
+          engineStatus.textContent = "BUILD FAILED";
+          setStepState("execute", 0);
+          stageTitle.textContent = "Build failed";
+          stageDetail.textContent = data.message || "Unknown Python error.";
+          logLine("ERROR: " + (data.message || "Unknown Python error."));
+          if (data.detail) logLine(data.detail);
+          worker.terminate();
+          worker = null;
+        }
+      };
+
+      const transfer = [];
+      const payload = [];
+
+      for (const file of files.values()) {
+        const buffer = await file.arrayBuffer();
+        payload.push({ name: file.name, buffer });
+        transfer.push(buffer);
+      }
+
+      worker.postMessage({ type: "build", files: payload }, transfer);
+    }
+
+    buildBtn.addEventListener("click", startBuild);
+
+    renderAll();
+
+    const clock = document.getElementById("clock");
     function tick() {
-      v.textContent = window.innerWidth + ' × ' + window.innerHeight;
-      c.textContent = new Date().toLocaleTimeString([], { hour12: false });
+      clock.textContent = new Date().toLocaleTimeString([], { hour12: false });
     }
     tick();
-    window.addEventListener('resize', tick);
     setInterval(tick, 1000);
   </script>
 </body>
 </html>
 
 <style>
-:global(*){box-sizing:border-box}:global(html){scroll-behavior:smooth}:global(body){margin:0;background:radial-gradient(900px 500px at 75% -10%,#12304b55,transparent 60%),linear-gradient(180deg,#070b12,#05080d);color:#e9f1fb;font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;min-height:100vh}:global(body):before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.18;background-image:linear-gradient(#ffffff06 1px,transparent 1px),linear-gradient(90deg,#ffffff06 1px,transparent 1px);background-size:32px 32px}:global(a){color:inherit;text-decoration:none}:global(code){font-family:ui-monospace,SFMono-Regular,Consolas,monospace;color:#b9dfff}
-.wrap{max-width:1240px;margin:auto;padding:26px}.top{height:56px;border:1px solid #1d2a3a;background:#09101aee;backdrop-filter:blur(14px);display:flex;align-items:center;justify-content:space-between;padding:0 18px;border-radius:14px;position:sticky;top:16px;z-index:10;box-shadow:0 18px 60px #0006}.brand{display:flex;align-items:center;gap:11px;font-weight:800;letter-spacing:.08em}.mark{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#7c3aed,#38bdf8);display:grid;place-items:center;color:#fff;font-size:13px}.nav{display:flex;gap:8px}.nav a{padding:7px 11px;border-radius:8px;color:#8190a5}.nav a:hover{background:#ffffff08;color:#fff}
-.hero{padding:76px 8px 34px;display:grid;grid-template-columns:1fr 360px;gap:30px}.eyebrow{color:#38bdf8;font-size:11px;letter-spacing:.22em;font-weight:800}.hero h1{font-size:clamp(38px,6vw,72px);line-height:.95;margin:12px 0 18px;letter-spacing:-.055em}.hero p{max-width:680px;color:#8190a5;font-size:16px}.actions{display:flex;gap:10px;margin-top:24px;flex-wrap:wrap}.btn{border:1px solid #1d2a3a;background:#101925;padding:11px 15px;border-radius:9px;font-weight:700}.btn.primary{background:#eaf6ff;color:#06111d;border-color:#eaf6ff}.btn:hover{transform:translateY(-1px)}
-.hud{border:1px solid #1d2a3a;background:linear-gradient(145deg,#0e1723,#091019);border-radius:16px;padding:18px;box-shadow:0 25px 80px #0008}.hudhead{display:flex;justify-content:space-between;color:#8190a5;font-size:11px;letter-spacing:.12em}.status{display:flex;align-items:center;gap:8px;margin:25px 0 20px;font-weight:800}.dot{width:8px;height:8px;border-radius:50%;background:#45e39b;box-shadow:0 0 14px #45e39b}.metric{display:grid;grid-template-columns:1fr auto;gap:8px;padding:10px 0;border-top:1px solid #1d2a3a}.metric span:first-child{color:#8190a5}.ok{color:#45e39b}
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:22px 0}.card{border:1px solid #1d2a3a;background:#0b121cdd;border-radius:14px;padding:18px}.label{color:#8190a5;font-size:10px;letter-spacing:.16em;text-transform:uppercase}.value{font-size:20px;font-weight:800;margin-top:7px}.sub{color:#8190a5;font-size:12px;margin-top:3px}
-.section{margin-top:48px}.section h2{font-size:22px;margin:0 0 14px}.section>p{color:#8190a5}.code{border:1px solid #1d2a3a;border-radius:14px;overflow:hidden;background:#070c13}.codebar{padding:11px 14px;border-bottom:1px solid #1d2a3a;display:flex;justify-content:space-between;color:#8190a5;font-size:11px}.code pre{margin:0;padding:20px;overflow:auto;max-height:420px;color:#c8d5e5;font:12px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace}.pill{display:inline-flex;align-items:center;gap:7px;padding:5px 9px;border:1px solid #234056;border-radius:999px;color:#9bdcff;background:#0b1b28}.timeline{display:grid;gap:10px}.step{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:12px;border:1px solid #1d2a3a;background:#0b121b;padding:13px;border-radius:11px}.num{width:27px;height:27px;border-radius:7px;background:#122236;color:#38bdf8;display:grid;place-items:center;font-weight:800}footer{margin:60px 0 20px;padding-top:18px;border-top:1px solid #1d2a3a;display:flex;justify-content:space-between;color:#8190a5;font-size:12px}
-@media(max-width:850px){.hero{grid-template-columns:1fr}.grid{grid-template-columns:1fr}.nav a{display:none}.wrap{padding:15px}.hero{padding-top:48px}.top{top:8px}}
+:global(*) { box-sizing:border-box }
+:global(html) { scroll-behavior:smooth }
+:global(body) {
+  margin:0;
+  background:
+    radial-gradient(850px 500px at 84% -10%, rgba(23,105,165,.23), transparent 65%),
+    radial-gradient(720px 420px at -10% 25%, rgba(73,53,163,.12), transparent 65%),
+    linear-gradient(180deg,#06090f 0%,#05070c 100%);
+  color:#e7eef7;
+  font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  min-height:100vh;
+}
+:global(body):before {
+  content:""; position:fixed; inset:0; pointer-events:none; opacity:.13;
+  background-image:linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px);
+  background-size:32px 32px;
+  mask-image:linear-gradient(to bottom,black,transparent 88%);
+}
+:global(a) { color:inherit; text-decoration:none }
+:global(button),:global(input) { font:inherit }
+.wrap { max-width:1260px; margin:auto; padding:24px }
+.noise {
+  position:fixed; inset:0; pointer-events:none; opacity:.035; z-index:20;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 220 220' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.24'/%3E%3C/svg%3E");
+}
+.top {
+  height:58px; border:1px solid #1b2a3a; background:#09111bf2; backdrop-filter:blur(16px);
+  display:flex; align-items:center; justify-content:space-between; padding:0 18px;
+  border-radius:15px; position:sticky; top:14px; z-index:10; box-shadow:0 18px 70px rgba(0,0,0,.45);
+}
+.brand { display:flex; align-items:center; gap:11px; font-weight:850; letter-spacing:.1em }
+.mark {
+  width:31px; height:31px; border-radius:8px; display:grid; place-items:center;
+  background:linear-gradient(135deg,#7c3aed,#22d3ee); color:#fff; font-size:12px; font-weight:900;
+}
+.nav { display:flex; gap:6px }
+.nav a { padding:8px 11px; border-radius:9px; color:#8493a7; font-size:11px; font-weight:800; letter-spacing:.08em }
+.nav a:hover { color:#fff; background:#ffffff09 }
+.hero {
+  padding:82px 8px 34px; display:grid; grid-template-columns:1fr 370px; gap:34px; align-items:end;
+}
+.eyebrow,.section-kicker {
+  color:#45c9ff; font-size:10px; font-weight:900; letter-spacing:.22em;
+}
+.hero h1 { margin:13px 0 18px; font-size:clamp(45px,7.1vw,86px); line-height:.9; letter-spacing:-.07em }
+.hero h1 span { color:#8f79ff }
+.hero p { max-width:720px; margin:0; color:#8795a7; font-size:16px }
+.hero p strong { color:#dce7f5 }
+.hero-meta {
+  display:flex; flex-wrap:wrap; gap:10px; margin-top:25px; color:#708095; font-size:10px; font-weight:800; letter-spacing:.11em;
+}
+.live-dot,.dot { display:inline-block; width:7px; height:7px; border-radius:50%; background:#41e59d; box-shadow:0 0 13px rgba(65,229,157,.75) }
+.sep { color:#314155 }
+.hud,.builder,.progress-card,.console-card,.output-card,.code-card,.info-card {
+  border:1px solid #1a2a3a; background:linear-gradient(145deg,#0b141f,#091019); box-shadow:0 24px 70px rgba(0,0,0,.36);
+}
+.hud { border-radius:17px; padding:19px }
+.hudhead,.console-head,.codebar {
+  display:flex; justify-content:space-between; align-items:center; gap:10px;
+  color:#748398; font-size:10px; font-weight:900; letter-spacing:.12em;
+}
+.online { color:#41e59d }
+.status { display:flex; align-items:center; gap:9px; margin:25px 0 18px; font-weight:850 }
+.metric { display:grid; grid-template-columns:1fr auto; gap:9px; padding:10px 0; border-top:1px solid #172637 }
+.metric span { color:#748398 }
+.metric b { color:#d7e4f2; text-align:right; font-size:12px }
+.section { margin-top:57px }
+.section h2 { margin:6px 0 8px; font-size:25px; letter-spacing:-.04em }
+.section p { margin:0; color:#7f8da0 }
+.builder { padding:23px; border-radius:18px }
+.section-top { display:flex; justify-content:space-between; gap:20px; align-items:end; margin-bottom:20px }
+.counter { border:1px solid #274057; background:#0c1925; color:#a7d9f4; padding:7px 10px; border-radius:999px; font-size:10px; font-weight:900; letter-spacing:.1em; white-space:nowrap }
+.drop-zone {
+  min-height:208px; border:1px dashed #2e4e68; border-radius:17px; background:
+    radial-gradient(500px 200px at 50% 10%,rgba(45,183,255,.11),transparent 70%),#08111a;
+  display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; cursor:pointer;
+  transition:.18s ease; padding:25px;
+}
+.drop-zone:hover,.drop-zone.drag { border-color:#4bd2ff; transform:translateY(-1px); background-color:#0a1520 }
+.drop-icon {
+  width:48px; height:48px; border:1px solid #31526c; border-radius:12px; display:grid; place-items:center;
+  color:#4bd2ff; font-size:20px; margin-bottom:12px; background:#0d1c29;
+}
+.drop-title { font-size:13px; font-weight:900; letter-spacing:.15em }
+.drop-sub { color:#728197; font-size:11px; margin:5px 0 14px }
+.asset-grid { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:10px; margin-top:13px }
+.asset,.empty-assets {
+  min-width:0; border:1px solid #1a2a38; border-radius:12px; background:#09111a; padding:9px; position:relative;
+}
+.asset { overflow:hidden }
+.asset img { width:100%; aspect-ratio:1.55; object-fit:cover; display:block; border-radius:8px; background:#05090d }
+.asset-meta { display:flex; flex-direction:column; gap:2px; margin-top:7px }
+.asset-meta b { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:10px }
+.asset-meta span { color:#6f7e92; font-size:9px }
+.asset-remove {
+  position:absolute; right:7px; top:7px; width:22px; height:22px; border-radius:7px; border:1px solid #33465a;
+  background:#08111ae8; color:#b9c6d4; cursor:pointer;
+}
+.asset-remove:hover { color:#fff; border-color:#ff6b79 }
+.empty-assets { grid-column:1/-1; color:#6f7e92; text-align:center; padding:17px }
+.manifest { margin-top:17px; border:1px solid #172637; border-radius:13px; overflow:hidden }
+.manifest-head,.builder-actions {
+  display:flex; justify-content:space-between; align-items:center; gap:14px;
+}
+.manifest-head { padding:10px 12px; background:#081019; color:#7e8c9f; font-size:9px; font-weight:900; letter-spacing:.12em }
+.manifest-list { display:grid; grid-template-columns:repeat(3,1fr) }
+.manifest-item {
+  display:grid; grid-template-columns:8px 1fr auto; gap:8px; align-items:center; padding:9px 11px;
+  border-top:1px solid #132332; color:#98a7ba; font-size:10px;
+}
+.manifest-item b { color:#5c6b7e; font-size:8px; letter-spacing:.08em }
+.manifest-item.ok b { color:#41e59d }
+.manifest-dot { width:7px; height:7px; border-radius:50%; background:#3b4a5c }
+.manifest-item.ok .manifest-dot { background:#41e59d; box-shadow:0 0 10px rgba(65,229,157,.55) }
+.builder-actions { margin-top:18px }
+.btn {
+  display:inline-flex; align-items:center; justify-content:center; gap:8px; border:1px solid #25384b; background:#0e1925;
+  color:#dbe8f5; padding:11px 14px; border-radius:10px; font-weight:850; font-size:11px; letter-spacing:.06em;
+  cursor:pointer; transition:.16s ease;
+}
+.btn:hover:not(:disabled) { transform:translateY(-1px); border-color:#3a5872 }
+.btn:disabled { opacity:.42; cursor:not-allowed }
+.btn.primary { background:#edf7ff; color:#07111c; border-color:#edf7ff }
+.btn.primary.ready { box-shadow:0 0 0 1px #4bd2ff33,0 9px 32px #187cad33 }
+.btn.large { min-width:220px; padding:13px 17px }
+.btn.secondary { background:#10202e; color:#a9d8ee; border-color:#2c4b61; padding:9px 12px; font-size:10px }
+.btn.ghost { background:transparent }
+.btn.disabled { pointer-events:none; opacity:.42 }
+.btn-led { width:7px; height:7px; background:#0d131b; border-radius:50% }
+.btn.primary.ready .btn-led { background:#41e59d; box-shadow:0 0 10px rgba(65,229,157,.6) }
+.process-layout { display:grid; grid-template-columns:1.28fr .72fr; gap:14px; margin-top:14px }
+.progress-card,.console-card { border-radius:17px; padding:18px }
+.progress-head { display:flex; justify-content:space-between; color:#738297; font-size:9px; font-weight:900; letter-spacing:.12em }
+.progress-head #percentLabel { color:#dcecf9 }
+.progress-track { height:9px; border-radius:99px; background:#081019; overflow:hidden; margin-top:14px; border:1px solid #152536 }
+.progress-fill {
+  width:0%; height:100%; border-radius:99px;
+  background:linear-gradient(90deg,#2cc6ff,#8f79ff,#42e39d); transition:width .22s ease;
+}
+.stage-title { margin-top:16px; font-size:16px; font-weight:900; letter-spacing:-.02em }
+.stage-detail { color:#77869a; font-size:11px; margin-top:3px; min-height:34px }
+.steps { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; margin-top:17px }
+.pstep {
+  border:1px solid #162739; background:#09111a; border-radius:10px; padding:9px;
+  display:grid; gap:2px; min-height:62px;
+}
+.pstep span { color:#5f6e80; font-size:8px; font-weight:900 }
+.pstep b { font-size:9px; letter-spacing:.08em }
+.pstep em { color:#69788b; font-size:8px; font-style:normal }
+.pstep.active { border-color:#365d78; background:#0c1822 }
+.pstep.active span { color:#4bd2ff }
+.pstep.done { border-color:#234c3e }
+.pstep.done span { color:#41e59d }
+.console-card { display:flex; flex-direction:column; min-height:232px }
+.console-head { border-bottom:1px solid #172637; padding-bottom:11px }
+#consoleState { color:#90a2b7 }
+.console-card pre {
+  flex:1; margin:0; padding:13px 0 0; overflow:auto; white-space:pre-wrap; color:#90a4b9;
+  font:10px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace;
+}
+.output-card { border-radius:18px; padding:18px; display:grid; grid-template-columns:52px 1fr auto; gap:14px; align-items:center }
+.output-icon {
+  width:52px; height:52px; border-radius:13px; display:grid; place-items:center;
+  color:#fff; font-size:10px; font-weight:950; letter-spacing:.08em;
+  background:linear-gradient(145deg,#5b43c9,#29a9de);
+}
+.output-label { color:#6d7e92; font-size:9px; font-weight:900; letter-spacing:.12em }
+.output-card h2 { margin:4px 0 2px; font-size:17px; letter-spacing:-.02em }
+.output-card p { margin:0; font-size:10px }
+.source-grid { display:grid; grid-template-columns:1.1fr .9fr; gap:14px; margin-top:14px }
+.code-card,.info-card { border-radius:17px; overflow:hidden }
+.codebar { padding:11px 13px; border-bottom:1px solid #172637; background:#081019 }
+.code-card pre { margin:0; padding:16px; overflow:auto; color:#c1d0df; font:10.5px/1.7 ui-monospace,SFMono-Regular,Consolas,monospace }
+.info-card { padding:8px 14px }
+.info-row { display:grid; grid-template-columns:1fr 1.2fr; gap:12px; padding:12px 0; border-bottom:1px solid #152536 }
+.info-row:last-child { border-bottom:0 }
+.info-row span { color:#69798c; font-size:9px; font-weight:900; letter-spacing:.1em }
+.info-row b { color:#d9e5f1; font-size:10px }
+footer {
+  margin:64px 0 20px; padding-top:18px; border-top:1px solid #182839;
+  display:flex; justify-content:space-between; color:#66768a; font-size:10px; letter-spacing:.08em;
+}
+@keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(65,229,157,.0)} 50%{box-shadow:0 0 0 7px rgba(65,229,157,.08)} }
+
+@media (max-width:1000px) {
+  .hero { grid-template-columns:1fr }
+  .asset-grid { grid-template-columns:repeat(4,1fr) }
+  .process-layout,.source-grid { grid-template-columns:1fr }
+}
+@media (max-width:720px) {
+  .wrap { padding:14px }
+  .top { top:7px }
+  .nav a { display:none }
+  .hero { padding-top:54px }
+  .section-top { flex-direction:column; align-items:flex-start }
+  .asset-grid { grid-template-columns:repeat(2,1fr) }
+  .manifest-list { grid-template-columns:1fr }
+  .steps { grid-template-columns:repeat(2,1fr) }
+  .output-card { grid-template-columns:1fr }
+  .output-icon { width:48px; height:48px }
+  footer { flex-direction:column; gap:8px }
+}
 </style>
