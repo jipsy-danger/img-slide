@@ -1,154 +1,121 @@
-/* IS — Image to PowerPoint browser worker */
+/* IS — browser runner for the user's unchanged build_slide.py */
 
 const PYODIDE_VERSION = "0.29.5";
-const PYODIDE_BASE = "https://cdn.jsdelivr.net/pyodide/v" + PYODIDE_VERSION + "/full/";
-const PYODIDE_SCRIPT = PYODIDE_BASE + "pyodide.js";
+const BASE = "https://cdn.jsdelivr.net/pyodide/v" + PYODIDE_VERSION + "/full/";
+const SCRIPT_URL = BASE + "pyodide.js";
 const SOURCE_URL = "https://raw.githubusercontent.com/jipsy-danger/img-slide/main/build_slide.py";
 
-let pyodide = null;
-let booted = false;
+const REQUIRED = [
+  "logo.png", "p1g.png", "p2g.png", "cube.png", "center.png",
+  "arrow.png", "grid.png", "th1.png", "th2.png", "ic1.png", "ic2.png", "ic3.png"
+];
 
-function send(type, extra = {}) {
-  self.postMessage({ type, ...extra });
-}
+let pyodide;
+let ready = false;
 
-function progress(percent, stage, detail = "") {
-  send("progress", { percent, stage, detail });
-}
+const send = (type, data = {}) => self.postMessage({ type, ...data });
+const progress = (percent, stage, detail) => send("progress", { percent, stage, detail });
 
-async function ensureRuntime() {
-  if (booted) return;
+async function startRuntime() {
+  if (ready) return;
 
-  progress(12, "Loading Python runtime", "Starting CPython through WebAssembly…");
-  importScripts(PYODIDE_SCRIPT);
-  pyodide = await loadPyodide({ indexURL: PYODIDE_BASE });
+  progress(8, "Starting Python", "Loading the browser Python runtime…");
+  importScripts(SCRIPT_URL);
+  pyodide = await loadPyodide({ indexURL: BASE });
 
-  progress(33, "Loading image engine", "Loading Pillow + XML support…");
-  await pyodide.loadPackage(["lxml", "pillow"]);
+  progress(25, "Loading dependencies", "Loading Pillow and XML support…");
+  await pyodide.loadPackage(["lxml", "pillow", "micropip"]);
 
-  progress(46, "Loading package manager", "Loading micropip inside Pyodide…");
-  await pyodide.loadPackage("micropip");
+  progress(42, "Loading PowerPoint engine", "Installing python-pptx…");
+  const micropip = pyodide.pyimport("micropip");
+  await micropip.install("python-pptx==1.0.2");
 
-  progress(53, "Loading PowerPoint engine", "Installing python-pptx…");
-  await pyodide.runPythonAsync(
-    ["import micropip", "await micropip.install('python-pptx==1.0.2')"].join("\n")
-  );
-
-  pyodide.FS.mkdirTree("/workspace/input");
+  pyodide.FS.mkdirTree("/workspace");
   pyodide.FS.mkdirTree("/mnt/user-data/outputs");
-  booted = true;
-  progress(61, "Runtime ready", "Browser Python engine is ready.");
-}
 
-async function fetchSource() {
-  const response = await fetch(SOURCE_URL, { cache: "no-store" });
-  if (!response.ok) {
-    throw new Error("Could not load build_slide.py from GitHub.");
-  }
-  return await response.text();
+  ready = true;
+  progress(55, "Python ready", "The unchanged build_slide.py is ready to run.");
 }
 
 function clearDirectory(path) {
   try {
-    const entries = pyodide.FS.readdir(path);
-    for (const name of entries) {
+    for (const name of pyodide.FS.readdir(path)) {
       if (name === "." || name === "..") continue;
       try { pyodide.FS.unlink(path + "/" + name); } catch (_) {}
     }
   } catch (_) {}
 }
 
-function locateOutput() {
-  const entries = pyodide.FS.readdir("/mnt/user-data/outputs");
-  const candidates = entries
-    .filter((name) => /\.(pptx?|PPTX?)$/.test(name))
-    .map((name) => "/mnt/user-data/outputs/" + name);
+function findPptx() {
+  const outputs = pyodide.FS.readdir("/mnt/user-data/outputs")
+    .filter((name) => /\.pptx?$/i.test(name));
 
-  if (!candidates.length) {
-    throw new Error("The converter finished without creating a .pptx file.");
+  if (!outputs.length) {
+    throw new Error("build_slide.py completed but did not create a PowerPoint file.");
   }
 
-  candidates.sort((a, b) => pyodide.FS.stat(b).size - pyodide.FS.stat(a).size);
-  return candidates[0];
+  const path = "/mnt/user-data/outputs/" + outputs[0];
+  return { path, name: outputs[0] };
 }
 
 self.onmessage = async (event) => {
   if (event.data?.type !== "build") return;
 
   try {
-    const incoming = Array.isArray(event.data.files) ? event.data.files : [];
-    if (!incoming.length) {
-      throw new Error("Select at least one image before starting conversion.");
+    const inputFiles = Array.isArray(event.data.files) ? event.data.files : [];
+    const byName = new Map(inputFiles.map((file) => [String(file.name).toLowerCase(), file]));
+    const missing = REQUIRED.filter((name) => !byName.has(name.toLowerCase()));
+
+    if (missing.length) {
+      throw new Error("Missing required files: " + missing.join(", "));
     }
 
-    await ensureRuntime();
+    await startRuntime();
 
-    progress(66, "Preparing images", "Copying selected images into the Python input folder…");
-    clearDirectory("/workspace/input");
+    progress(60, "Preparing images", "Copying the required image files into the Python workspace…");
+    clearDirectory("/workspace");
     clearDirectory("/mnt/user-data/outputs");
 
-    const usedNames = new Set();
-
-    for (const item of incoming) {
-      const original = String(item.name || "image");
-      const safeBase = original.replaceAll("\\\\", "/").split("/").pop();
-      if (!safeBase) continue;
-
-      let safeName = safeBase;
-      let n = 2;
-      while (usedNames.has(safeName.toLowerCase())) {
-        const dot = safeBase.lastIndexOf(".");
-        const stem = dot > 0 ? safeBase.slice(0, dot) : safeBase;
-        const ext = dot > 0 ? safeBase.slice(dot) : "";
-        safeName = stem + "_" + n++ + ext;
-      }
-      usedNames.add(safeName.toLowerCase());
-
+    for (const requiredName of REQUIRED) {
+      const item = byName.get(requiredName.toLowerCase());
       pyodide.FS.writeFile(
-        "/workspace/input/" + safeName,
+        "/workspace/" + requiredName,
         new Uint8Array(item.buffer)
       );
     }
 
-    progress(75, "Running build_slide.py", "Converting each image into one PowerPoint slide…");
+    progress(70, "Running build_slide.py", "Executing the repository Python file without modifying it…");
 
-    const source = await fetchSource();
+    const response = await fetch(SOURCE_URL, { cache: "no-store" });
+    if (!response.ok) throw new Error("Could not load build_slide.py from GitHub.");
+
+    const source = await response.text();
     pyodide.FS.writeFile("/workspace/build_slide.py", source);
+    pyodide.FS.chdir("/workspace");
 
-    await pyodide.runPythonAsync(
-      "import os\\n" +
-      "os.environ['IMG_SLIDE_INPUT_DIR'] = '/workspace/input'\\n" +
-      "os.environ['IMG_SLIDE_OUTPUT'] = '/mnt/user-data/outputs/IS_Images_to_PowerPoint.pptx'"
-    );
-
-    progress(82, "Building slides", "python-pptx is writing the presentation…");
-
+    // Execute the exact repository file as Python __main__.
     await pyodide.runPythonAsync(
       "exec(compile(open('/workspace/build_slide.py', 'r', encoding='utf-8').read(), " +
       "'build_slide.py', 'exec'), {'__name__': '__main__', '__file__': '/workspace/build_slide.py'})"
     );
 
-    progress(93, "Finalizing output", "Reading the completed PowerPoint…");
+    progress(93, "Finalizing", "Reading the PowerPoint generated by build_slide.py…");
 
-    const outputPath = locateOutput();
-    const outputName = outputPath.split("/").pop();
-    const bytes = pyodide.FS.readFile(outputPath);
+    const output = findPptx();
+    const bytes = pyodide.FS.readFile(output.path);
 
-    progress(100, "Conversion complete", outputName + " is ready to download.");
+    progress(100, "Complete", output.name + " is ready.");
 
-    self.postMessage(
-      {
-        type: "done",
-        name: outputName,
-        mime: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-        buffer: bytes.buffer,
-      },
-      [bytes.buffer]
-    );
+    self.postMessage({
+      type: "done",
+      name: output.name,
+      mime: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      buffer: bytes.buffer
+    }, [bytes.buffer]);
   } catch (error) {
     send("error", {
       message: error?.message ? String(error.message) : String(error),
-      detail: error?.stack ? String(error.stack) : "",
+      detail: error?.stack ? String(error.stack) : ""
     });
   }
 };
