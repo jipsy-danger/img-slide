@@ -17,16 +17,16 @@ Browser usage:
 from __future__ import annotations
 
 import argparse
+import io
 import os
 from pathlib import Path
 
 from PIL import Image
 from pptx import Presentation
-from pptx.enum.shapes import MSO_SHAPE
+from pptx.dml.color import RGBColor
 from pptx.util import Emu
 
 
-# 16:9 PowerPoint canvas matching the original project.
 SLIDE_W = Emu(12192000)
 SLIDE_H = Emu(6858000)
 
@@ -43,50 +43,57 @@ IMAGE_EXTENSIONS = {
 
 
 def image_files(input_dir: Path) -> list[Path]:
-    files = [
-        p for p in input_dir.iterdir()
-        if p.is_file() and p.suffix.lower() in IMAGE_EXTENSIONS
-    ]
-    return sorted(files, key=lambda p: p.name.lower())
+    return sorted(
+        (
+            path
+            for path in input_dir.iterdir()
+            if path.is_file() and path.suffix.lower() in IMAGE_EXTENSIONS
+        ),
+        key=lambda path: path.name.lower(),
+    )
 
 
 def add_image_slide(prs: Presentation, image_path: Path) -> None:
     slide = prs.slides.add_slide(prs.slide_layouts[6])
 
-    # Clean white presentation background.
-    fill = slide.background.fill
-    fill.solid()
-    fill.fore_color.rgb = __import__("pptx.dml.color", fromlist=["RGBColor"]).RGBColor(
-        255, 255, 255
-    )
+    background = slide.background.fill
+    background.solid()
+    background.fore_color.rgb = RGBColor(255, 255, 255)
 
-    with Image.open(image_path) as im:
-        width_px, height_px = im.size
+    with Image.open(image_path) as image:
+        image.load()
+        width_px, height_px = image.size
 
-    if width_px <= 0 or height_px <= 0:
-        raise ValueError(f"Invalid image dimensions: {image_path.name}")
+        if width_px <= 0 or height_px <= 0:
+            raise ValueError(f"Invalid image dimensions: {image_path.name}")
 
-    # Fit the complete image inside the slide without distortion.
-    slide_ratio = SLIDE_W / SLIDE_H
+        # Normalize every supported input format to PNG bytes so WEBP/BMP/GIF/TIFF
+        # files are still accepted by the final PowerPoint.
+        rgba = image.convert("RGBA")
+        image_bytes = io.BytesIO()
+        rgba.save(image_bytes, format="PNG")
+        image_bytes.seek(0)
+
+    slide_ratio = int(SLIDE_W) / int(SLIDE_H)
     image_ratio = width_px / height_px
 
     if image_ratio >= slide_ratio:
-        pic_w = int(SLIDE_W)
-        pic_h = int(round(pic_w / image_ratio))
+        picture_width = int(SLIDE_W)
+        picture_height = int(round(picture_width / image_ratio))
         left = 0
-        top = int((SLIDE_H - Emu(pic_h)) / 2)
+        top = int((int(SLIDE_H) - picture_height) / 2)
     else:
-        pic_h = int(SLIDE_H)
-        pic_w = int(round(pic_h * image_ratio))
+        picture_height = int(SLIDE_H)
+        picture_width = int(round(picture_height * image_ratio))
         top = 0
-        left = int((SLIDE_W - Emu(pic_w)) / 2)
+        left = int((int(SLIDE_W) - picture_width) / 2)
 
     slide.shapes.add_picture(
-        str(image_path),
+        image_bytes,
         Emu(left),
         Emu(top),
-        width=Emu(pic_w),
-        height=Emu(pic_h),
+        width=Emu(picture_width),
+        height=Emu(picture_height),
     )
 
 
@@ -110,7 +117,6 @@ def convert_images_to_pptx(input_dir: Path, output_file: Path) -> Path:
     prs.slide_width = SLIDE_W
     prs.slide_height = SLIDE_H
 
-    # Presentation() starts empty; add exactly one slide for each image.
     for image_path in images:
         add_image_slide(prs, image_path)
 
@@ -142,9 +148,10 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    output = convert_images_to_pptx(Path(args.input_dir), Path(args.output))
-    count = len(image_files(Path(args.input_dir)))
-    print(f"IS BUILD COMPLETE")
+    input_dir = Path(args.input_dir)
+    output = convert_images_to_pptx(input_dir, Path(args.output))
+    count = len(image_files(input_dir))
+    print("IS BUILD COMPLETE")
     print(f"IMAGES: {count}")
     print(f"SLIDES: {count}")
     print(f"OUTPUT: {output}")
