@@ -88,12 +88,6 @@
     const resultName = document.getElementById("resultName");
     const resultMeta = document.getElementById("resultMeta");
     const download = document.getElementById("download");
-    const pipes = [...document.querySelectorAll(".pipe")];
-
-    const REQUIRED = [
-      "logo.png", "p1g.png", "p2g.png", "cube.png", "center.png",
-      "arrow.png", "grid.png", "th1.png", "th2.png", "ic1.png", "ic2.png", "ic3.png"
-    ];
 
     const selected = [];
     let worker = null;
@@ -219,7 +213,7 @@
       download.href = "#";
       download.classList.add("disabled");
       resultName.textContent = "No file generated yet";
-      resultMeta.textContent = "Your converted presentation will appear here when the build finishes.";
+      resultMeta.textContent = "—";
       setProgress(0, "Waiting for images", "The converter will start when you press Convert to PowerPoint.");
       topStatus.textContent = "CONVERTER READY";
       render();
@@ -245,7 +239,7 @@
       download.href = "#";
       download.classList.add("disabled");
       resultName.textContent = "Building presentation…";
-      resultMeta.textContent = "IS is running build_slide.py in the browser.";
+      resultMeta.textContent = "Converting your images…";
 
       worker?.terminate();
       worker = new Worker("/img-slide/python-worker.js?rev=20260930-4");
@@ -315,13 +309,6 @@
     }
 
     convert.addEventListener("click", runConversion);
-
-    const clock = document.getElementById("clock");
-    function tick() {
-      clock.textContent = new Date().toLocaleTimeString([], { hour12: false });
-    }
-    tick();
-    setInterval(tick, 1000);
 
     render();
   </script>
