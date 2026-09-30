@@ -7,27 +7,24 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>IS — Image to PowerPoint</title>
-  <meta name="description" content="IS converts images to PowerPoint." />
 </head>
-
 <body>
   <div class="app">
     <header class="topbar">
-      <div class="brand"><span class="logo">IS</span><span>IS</span></div>
-      <div class="status"><i id="statusDot"></i><span id="topStatus">READY</span></div>
+      <div class="brand"><span class="logo">IS</span><b>IS</b></div>
+      <div class="status"><i></i><span id="topStatus">READY</span></div>
     </header>
 
     <main>
       <section class="intro">
-        <h1>Image → PowerPoint</h1>
-        <p>Upload the required images, run the converter, download the PPTX.</p>
+        <div class="eyebrow">IMAGE → POWERPOINT</div>
+        <h1>Convert images to slides.</h1>
       </section>
 
       <section class="card">
-        <div class="label">IMAGES</div>
-
-        <div class="required-note">
-          logo.png · p1g.png · p2g.png · cube.png · center.png · arrow.png · grid.png · th1.png · th2.png · ic1.png · ic2.png · ic3.png
+        <div class="row-head">
+          <div class="label">IMAGES</div>
+          <span class="count" id="count">0</span>
         </div>
 
         <div class="dropzone" id="dropzone">
@@ -35,41 +32,36 @@
           <div class="upload">+</div>
           <strong>Drop images here</strong>
           <span>or click to select</span>
-          <button type="button" id="choose" class="button secondary">SELECT IMAGES</button>
         </div>
 
-        <div class="file-head">
-          <span id="count">0 / 12</span>
-          <button type="button" id="clear" class="clear">CLEAR</button>
+        <div class="files-head">
+          <span>SELECTED</span>
+          <button id="clear" class="clear" type="button">CLEAR</button>
         </div>
 
         <div class="image-list" id="imageList">
           <div class="empty">No images selected.</div>
         </div>
-      </section>
 
-      <section class="card convert-card">
-        <div class="label">CONVERT</div>
-
-        <button type="button" class="button primary" id="convert" disabled>
+        <button type="button" class="button primary convert" id="convert" disabled>
           CONVERT TO POWERPOINT
         </button>
-
-        <div class="progress">
-          <div class="progress-top">
-            <span id="stage">Waiting</span>
-            <b id="percent">0%</b>
-          </div>
-          <div class="track"><div class="fill" id="fill"></div></div>
-          <small id="detail">Select all required images.</small>
-        </div>
       </section>
 
-      <section class="result card">
+      <section class="card progress-card">
+        <div class="progress-head">
+          <span id="stage">Waiting</span>
+          <b id="percent">0%</b>
+        </div>
+        <div class="track"><div class="fill" id="fill"></div></div>
+        <div class="detail" id="detail">Select one or more images.</div>
+      </section>
+
+      <section class="card result">
         <div class="label">OUTPUT</div>
         <div class="result-row">
           <div>
-            <strong id="resultName">No PPTX yet</strong>
+            <strong id="resultName">No file yet</strong>
             <span id="resultMeta">—</span>
           </div>
           <a id="download" class="button primary disabled" href="#" download>DOWNLOAD</a>
@@ -289,7 +281,7 @@
       resultMeta.textContent = "IS is running build_slide.py in the browser.";
 
       worker?.terminate();
-      worker = new Worker("/img-slide/python-worker.js?rev=20260930-3");
+      worker = new Worker("/img-slide/python-worker.js?rev=20260930-4");
 
       worker.onmessage = (event) => {
         const data = event.data || {};
@@ -372,115 +364,44 @@
 <style>
 :global(*){box-sizing:border-box}
 :global(body){
-  margin:0;
-  min-height:100vh;
-  background:#070a0f;
-  color:#edf2f7;
-  font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+  margin:0;min-height:100vh;background:#06090d;color:#edf2f7;
+  font:14px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
 }
 :global(button),:global(input){font:inherit}
-:global(a){color:inherit;text-decoration:none}
-
-.app{width:min(900px,calc(100% - 28px));margin:0 auto;padding:16px 0 28px}
-.topbar{
-  height:50px;padding:0 13px;border:1px solid #1d2733;border-radius:10px;
-  background:#0b1016;display:flex;align-items:center;justify-content:space-between;
-}
-.brand{display:flex;align-items:center;gap:9px;font-weight:900;letter-spacing:.1em;font-size:12px}
-.logo{
-  width:28px;height:28px;border-radius:7px;background:#2b8cff;
-  display:grid;place-items:center;color:#fff;font-size:10px;
-}
-.status{display:flex;align-items:center;gap:7px;color:#7f8b99;font-size:8px;font-weight:900;letter-spacing:.1em}
-.status i{width:6px;height:6px;border-radius:50%;background:#43dd95}
-
-.intro{padding:48px 2px 24px}
-.intro h1{margin:0;font-size:42px;letter-spacing:-.055em;line-height:1}
-.intro p{margin:9px 0 0;color:#7f8b99;font-size:13px}
-
-.card{
-  border:1px solid #1d2733;border-radius:11px;background:#0b1016;
-  padding:15px;margin-top:10px;
-}
-.label{
-  color:#718092;font-size:8px;font-weight:900;letter-spacing:.14em;margin-bottom:10px
-}
-.required-note{
-  padding:8px 10px;margin-bottom:9px;border:1px solid #182330;border-radius:8px;
-  color:#647384;background:#090e14;font-size:8px;line-height:1.5
-}
-.dropzone{
-  min-height:160px;border:1px dashed #304153;border-radius:9px;
-  background:#090e14;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  cursor:pointer;text-align:center;transition:.15s;
-}
-.dropzone:hover,.dropzone.drag{border-color:#2b8cff;background:#0b121a}
-.upload{
-  width:38px;height:38px;border:1px solid #2b4055;border-radius:8px;
-  display:grid;place-items:center;color:#5aa6ff;font-size:20px;margin-bottom:8px
-}
-.dropzone strong{font-size:11px}
-.dropzone span{color:#677587;font-size:9px;margin-top:3px}
-.button{
-  border:1px solid #2b4055;border-radius:8px;padding:9px 12px;
-  background:#101923;color:#dfe7ef;font-size:9px;font-weight:900;letter-spacing:.06em;
-  cursor:pointer;
-}
-.button.secondary{margin-top:11px}
-.button.primary{background:#2b8cff;border-color:#2b8cff;color:#fff}
-.button.primary:hover:not(:disabled){background:#2179dc}
-.button:disabled,.button.disabled{opacity:.35;pointer-events:none;cursor:not-allowed}
-
-.file-head{display:flex;justify-content:space-between;align-items:center;margin:13px 1px 7px;color:#7e8b99;font-size:8px;font-weight:900}
-.clear{border:0;background:transparent;color:#687688;font-size:8px;font-weight:900;cursor:pointer}
-.clear:hover{color:#ff7a86}
-.image-list{display:grid;gap:5px}
-.empty{
-  border:1px solid #182330;border-radius:8px;padding:12px;text-align:center;
-  color:#5f6c7c;font-size:9px
-}
-.image-row{
-  display:grid;grid-template-columns:27px 55px 1fr 25px;gap:9px;align-items:center;
-  padding:6px;border:1px solid #182330;border-radius:8px;background:#090e14
-}
-.image-index{
-  width:23px;height:23px;border-radius:5px;background:#0d1a27;
-  display:grid;place-items:center;color:#58a9ff;font-size:7px;font-weight:900
-}
-.image-row img{width:55px;height:37px;object-fit:cover;border-radius:5px;background:#070b10}
-.image-info{min-width:0;display:flex;flex-direction:column}
-.image-info b{font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.image-info small{font-size:7px;color:#647384;margin-top:1px}
-.remove{
-  width:24px;height:24px;border:1px solid #273544;border-radius:6px;
-  background:#0b1219;color:#788596;cursor:pointer
-}
-.remove:hover{color:#ff7a86;border-color:#65343b}
-
-.convert-card{display:grid;grid-template-columns:auto 1fr;gap:15px;align-items:end}
-.convert-card .label{grid-column:1/-1;margin-bottom:0}
-.progress{min-width:0}
-.progress-top{display:flex;justify-content:space-between;gap:10px;color:#8b97a5;font-size:9px}
-.progress-top b{color:#e8eef4}
-.track{height:7px;border-radius:99px;background:#111922;margin-top:7px;overflow:hidden}
-.fill{height:100%;width:0;background:#2b8cff;border-radius:99px;transition:width .2s}
-.progress small{display:block;color:#647384;font-size:8px;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-
-.result .label{margin-bottom:8px}
-.result-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.result-row>div{min-width:0}
-.result-row strong{display:block;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.result-row span{display:block;color:#647384;font-size:8px;margin-top:2px}
-
-footer{padding:15px 2px 0;color:#566272;font-size:8px}
-
-@media(max-width:620px){
-  .app{width:min(100% - 18px,900px)}
-  .intro{padding:38px 1px 19px}
-  .intro h1{font-size:34px}
-  .convert-card{grid-template-columns:1fr}
-  .convert-card .button{width:100%}
-  .result-row{align-items:stretch;flex-direction:column}
-  .result-row .button{width:100%}
-}
+:global(a){text-decoration:none;color:inherit}
+.app{width:min(820px,calc(100% - 28px));margin:0 auto;padding:18px 0 28px}
+.topbar{height:48px;padding:0 12px;border:1px solid #1b2631;border-radius:9px;background:#0a0f14;display:flex;align-items:center;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.08em}
+.logo{width:27px;height:27px;border-radius:7px;background:#2c8cff;display:grid;place-items:center;font-size:9px;font-weight:900;color:#fff}
+.status{display:flex;align-items:center;gap:7px;color:#718094;font-size:8px;font-weight:900;letter-spacing:.08em}
+.status i{width:6px;height:6px;border-radius:50%;background:#42d992}
+.intro{padding:48px 2px 22px}
+.eyebrow{color:#4da4ff;font-size:8px;font-weight:900;letter-spacing:.16em}
+.intro h1{font-size:38px;line-height:1;margin:10px 0 0;letter-spacing:-.055em}
+.card{background:#0a0f14;border:1px solid #1b2631;border-radius:10px;padding:14px;margin-top:10px}
+.row-head,.files-head,.progress-head,.result-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.label{color:#718094;font-size:8px;font-weight:900;letter-spacing:.13em}
+.count{min-width:23px;height:23px;padding:0 7px;border-radius:6px;display:grid;place-items:center;background:#0d1822;border:1px solid #203246;color:#5faaff;font-size:8px;font-weight:900}
+.dropzone{min-height:175px;margin-top:9px;border:1px dashed #2d4053;border-radius:9px;background:#080d12;display:flex;align-items:center;justify-content:center;flex-direction:column;cursor:pointer}
+.dropzone:hover,.dropzone.drag{border-color:#2c8cff;background:#0a1118}
+.upload{width:36px;height:36px;border:1px solid #27405a;border-radius:8px;display:grid;place-items:center;color:#55a7ff;font-size:20px;margin-bottom:8px}
+.dropzone strong{font-size:11px}.dropzone span{margin-top:3px;color:#687688;font-size:8px}
+.files-head{margin:13px 1px 7px;color:#718094;font-size:8px;font-weight:900;letter-spacing:.11em}
+.clear{border:0;background:transparent;color:#657487;font-size:8px;font-weight:900;letter-spacing:.08em;cursor:pointer}.clear:hover{color:#ff7884}
+.image-list{display:grid;gap:5px}.empty{padding:12px;text-align:center;color:#596779;border:1px solid #17222d;border-radius:8px;font-size:9px}
+.image-row{display:grid;grid-template-columns:27px 56px 1fr 25px;align-items:center;gap:9px;padding:6px;background:#080d12;border:1px solid #17222d;border-radius:8px}
+.image-index{width:23px;height:23px;border-radius:5px;background:#0d1924;color:#58aaff;display:grid;place-items:center;font-size:7px;font-weight:900}
+.image-row img{width:56px;height:38px;object-fit:cover;border-radius:5px}.image-info{min-width:0}
+.image-info b{display:block;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.image-info small{display:block;color:#627184;font-size:7px;margin-top:2px}
+.remove{width:24px;height:24px;border:1px solid #263544;border-radius:6px;background:#0b1218;color:#738196;cursor:pointer}.remove:hover{color:#ff7884}
+.convert{width:100%;margin-top:12px;height:40px}.progress-card{padding:13px 14px}
+.progress-head{color:#768396;font-size:8px;font-weight:900;letter-spacing:.06em}.progress-head b{color:#edf2f7}
+.track{height:6px;margin-top:8px;border-radius:99px;background:#111922;overflow:hidden}.fill{height:100%;width:0;border-radius:99px;background:#2c8cff;transition:width .2s}
+.detail{margin-top:6px;color:#667486;font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.result{padding:13px 14px}.result .label{margin-bottom:8px}.result-row>div{min-width:0}
+.result-row strong{display:block;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.result-row span{display:block;color:#627184;font-size:8px;margin-top:2px}
+.button{border:1px solid #294056;border-radius:7px;background:#101923;color:#e4ebf2;padding:9px 12px;font-size:8px;font-weight:900;letter-spacing:.07em;cursor:pointer}
+.button.primary{background:#2c8cff;border-color:#2c8cff;color:#fff}.button.primary:hover:not(:disabled){background:#2377dc}
+.button:disabled,.button.disabled{opacity:.35;pointer-events:none}footer{padding:15px 2px 0;color:#4f5c6c;font-size:8px}
+@media(max-width:560px){.app{width:min(100% - 18px,820px)}.intro h1{font-size:32px}.result-row{align-items:stretch;flex-direction:column}.result-row .button{width:100%}}
 </style>
