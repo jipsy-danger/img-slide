@@ -361,7 +361,7 @@
       resultMeta.textContent = "IS is running build_slide.py in the browser.";
 
       worker?.terminate();
-      worker = new Worker("/img-slide/python-worker.js");
+      worker = new Worker("/img-slide/python-worker.js?rev=20260930-3");
 
       worker.onmessage = (event) => {
         const data = event.data || {};
